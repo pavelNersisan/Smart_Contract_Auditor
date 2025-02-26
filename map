@@ -1,0 +1,25 @@
+smart-contract-auditor/
+├── backend/
+│   ├── app/
+│   │   ├── core/              # Config and security
+│   │   ├── models/            # DB models
+│   │   │   └── audit.py
+│   │   ├── routers/           # API endpoints
+│   │   │   └── audits.py
+│   │   ├── services/          # Business logic
+│   │   │   ├── slither.py
+│   │   │   ├── mythril.py
+│   │   │   └── report_generator.py
+│   │   └── worker.py          # Celery tasks
+│   ├── requirements.txt
+│   └── Dockerfile
+├── frontend/
+│   ├── src/
+│   │   ├── components/        # React components
+│   │   │   ├── ContractUpload.js
+│   │   │   └── VulnerabilityReport.js
+│   │   ├── utils/             # Web3 integration
+│   │   │   └── etherscan.js
+│   │   └── App.js
+│   └── Dockerfile
+└── docker-compose.yml
