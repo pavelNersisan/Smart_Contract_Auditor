@@ -651,13 +651,34 @@ class CompilerDiagnostics(Detector):
         "UnnamedReturnVariable": Severity.INFORMATIONAL,
     }
 
+    #: solc files many serious problems under the generic type "Warning", so
+    #: the message text has to be consulted as well. Patterns are matched
+    #: case-insensitively.
+    SEVERITY_BY_MESSAGE: tuple[tuple[re.Pattern[str], Severity], ...] = (
+        # EIP-170: over the 24576-byte runtime limit the contract cannot be
+        # deployed at all -- a blocker, not a style note.
+        (re.compile(r"exceeds 24576 bytes|code size", re.I), Severity.MEDIUM),
+        (re.compile(r"unreachable code", re.I), Severity.LOW),
+        (re.compile(r"shadows", re.I), Severity.LOW),
+        (re.compile(r"overriding|override", re.I), Severity.INFORMATIONAL),
+        (re.compile(r"unused", re.I), Severity.INFORMATIONAL),
+        (re.compile(r"mutability can be restricted", re.I), Severity.OPTIMIZATION),
+    )
+
+    def _severity(self, message: CompilerDiagnostic) -> Severity:
+        if message.severity == "error":
+            return Severity.LOW
+        by_type = self.SEVERITY_BY_TYPE.get(message.type)
+        if by_type is not None:
+            return by_type
+        for pattern, severity in self.SEVERITY_BY_MESSAGE:
+            if pattern.search(message.message):
+                return severity
+        return Severity.INFORMATIONAL
+
     def run(self, ctx: AnalysisContext) -> Iterable[Finding]:
         for message in ctx.compilation.messages:
-            severity = (
-                Severity.LOW
-                if message.severity == "error"
-                else self.SEVERITY_BY_TYPE.get(message.type, Severity.INFORMATIONAL)
-            )
+            severity = self._severity(message)
             yield Finding(
                 check_id=f"compiler-{message.severity}",
                 title=(

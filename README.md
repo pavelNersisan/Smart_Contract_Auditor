@@ -236,13 +236,16 @@ with zero infrastructure.
 
 Run in this environment (Debian 12, Python 3.11.2, Node v22.22.3):
 
-- **145 tests pass** (`pytest`), covering the compiler adapter, every detector
+- **161 tests pass** (`pytest`), covering the compiler adapter, every detector
   category, scoring, reports, the REST API through its real lifespan, auth,
-  rate limiting, the worker and the CLI.
+  rate limiting, the worker, the CLI, cross-directory imports and scale.
 - `auditor audit`, `auditor detectors` and `auditor doctor` executed against the
   fixtures (output shown above).
 - `npm run build` succeeds for the frontend.
-- Both `fixtures/safe/` contracts score 100/A with zero findings.
+- Both `fixtures/safe/` contracts score 100/A with zero findings, as does the
+  4-contract `fixtures/multifile/` project.
+- A 95.9 KB / 2,806-line contract compiles and analyses in ~4.3 s, exercising
+  compiler output far past the 64 KiB pipe boundary.
 
 ## What is not verified
 
