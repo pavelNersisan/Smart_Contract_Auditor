@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# Node / frontend build
+node_modules/
+frontend/dist/
+.npm/
+
+# Runtime data produced by the auditor
+.data/
+*.db
+*.db-wal
+*.db-shm
+reports/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Secrets -- never commit
+.env
+.env.*

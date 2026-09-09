@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Audit Report — {{ result.score }}/100 ({{ result.grade }})</title>
+<style>
+  :root {
+    --bg:#0f1115; --panel:#171a21; --ink:#e6e8ee; --muted:#9aa3b2; --line:#262b36;
+    --critical:#ff5470; --high:#ff9f43; --medium:#ffd166; --low:#4cc9f0;
+    --info:#adb5c4; --opt:#8b93a7; --ok:#3ddc97;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 36px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  h3 { font-size: 15px; margin: 0 0 6px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .scorebar { display:flex; align-items:center; gap:16px; background:var(--panel);
+              border:1px solid var(--line); border-radius:12px; padding:16px 18px; }
+  .score { font-size: 34px; font-weight: 700; }
+  .grade { font-size: 26px; font-weight: 700; padding: 2px 12px; border-radius: 8px;
+           background:#222834; }
+  .track { flex:1; height:10px; background:#222834; border-radius:99px; overflow:hidden; }
+  .fill { height:100%; background: linear-gradient(90deg,var(--critical),var(--medium),var(--ok)); }
+  table { width:100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { text-align:left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  code { background:#20242e; padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+  pre { background:#0b0d11; border:1px solid var(--line); border-radius:8px;
+        padding:10px 12px; overflow-x:auto; font-size:12.5px; }
+  .finding { background:var(--panel); border:1px solid var(--line); border-left-width:4px;
+             border-radius:10px; padding:14px 16px; margin:12px 0; }
+  .sev-Critical { border-left-color: var(--critical); }
+  .sev-High { border-left-color: var(--high); }
+  .sev-Medium { border-left-color: var(--medium); }
+  .sev-Low { border-left-color: var(--low); }
+  .sev-Informational { border-left-color: var(--info); }
+  .sev-Optimization { border-left-color: var(--opt); }
+  .pill { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.04em;
+          text-transform:uppercase; padding:2px 8px; border-radius:99px; background:#222834;
+          color:var(--muted); margin-right:6px; }
+  .loc { color: var(--muted); font-size: 12.5px; margin: 2px 0 8px; }
+  .rec { margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); }
+  .rec b { color: var(--ok); }
+  .empty { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:18px; color:var(--muted); }
+  .note { color: var(--muted); font-size: 12.5px; margin-top: 32px;
+          border-top: 1px solid var(--line); padding-top: 14px; }
+  a { color: var(--low); }
+  ul { margin: 6px 0 0; padding-left: 18px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Smart Contract Audit Report</h1>
+  <div class="sub">Audit <code>{{ result.id }}</code> · {{ result.duration_ms }} ms</div>
+
+  <div class="scorebar">
+    <div class="score">{{ result.score }}<span style="font-size:16px;color:var(--muted)">/100</span></div>
+    <div class="grade">{{ result.grade }}</div>
+    <div class="track"><div class="fill" style="width: {{ result.score }}%"></div></div>
+  </div>
+
+  <h2>Summary</h2>
+  <table>
+    <tr><th>Severity</th><th class="num">Count</th></tr>
+    {% for severity in severity_order %}
+      <tr><td>{{ severity.label }}</td><td class="num">{{ counts.get(severity.label, 0) }}</td></tr>
+    {% endfor %}
+  </table>
+
+  <h2>Analysis context</h2>
+  <table>
+    <tr><th>Compiled</th><td>{{ 'yes' if result.compiled else 'no' }}</td></tr>
+    <tr><th>Compiler</th><td>{{ result.solc_version or 'n/a' }}</td></tr>
+    <tr><th>Files</th><td>{{ result.sources | length }}</td></tr>
+    <tr><th>Contracts</th><td>{{ result.contracts | length }}</td></tr>
+    <tr><th>Findings</th><td>{{ result.findings | length }}</td></tr>
+  </table>
+
+  {% if result.contracts %}
+  <table style="margin-top:14px">
+    <tr><th>Contract</th><th>File</th><th>Kind</th>
+        <th class="num">Functions</th><th class="num">State vars</th><th class="num">Bytecode</th></tr>
+    {% for c in result.contracts %}
+      <tr><td><code>{{ c.name }}</code></td><td>{{ c.file }}</td><td>{{ c.kind }}</td>
+          <td class="num">{{ c.functions }}</td><td class="num">{{ c.state_variables }}</td>
+          <td class="num">{{ c.bytecode_size }} B</td></tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+
+  {% if result.tools %}
+  <h2>External analysers</h2>
+  <table>
+    <tr><th>Tool</th><th>Installed</th><th>Ran</th><th class="num">Findings</th><th>Note</th></tr>
+    {% for t in result.tools %}
+      <tr><td>{{ t.name }}</td><td>{{ 'yes' if t.available else 'no' }}</td>
+          <td>{{ 'yes' if t.ran else 'no' }}</td><td class="num">{{ t.findings | length }}</td>
+          <td>{{ t.note }}</td></tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+
+  <h2>Findings</h2>
+  {% if not findings %}
+    <div class="empty">No issues were reported by the enabled checks.</div>
+  {% else %}
+    {% for f in findings %}
+      <div class="finding sev-{{ f.severity.label }}">
+        <h3>{{ loop.index }}. {{ f.title }}</h3>
+        <div>
+          <span class="pill">{{ f.severity.label }}</span>
+          <span class="pill">{{ f.check_id }}</span>
+          <span class="pill">confidence: {{ f.confidence }}</span>
+          {% if f.swc %}<span class="pill">{{ f.swc }}</span>{% endif %}
+          {% if f.cwe %}<span class="pill">{{ f.cwe }}</span>{% endif %}
+        </div>
+        <div class="loc">
+          {% if f.location.file %}<code>{{ f.location.file }}:{{ f.location.line }}:{{ f.location.column }}</code>{% endif %}
+          {% if f.contract or f.function %} · {{ f.contract }}{% if f.function %}.{{ f.function }}(){% endif %}{% endif %}
+        </div>
+        <div>{{ f.description }}</div>
+        {% if f.location.snippet %}<pre>{{ f.location.snippet }}</pre>{% endif %}
+        <div class="rec"><b>Recommendation.</b> {{ f.recommendation }}</div>
+        {% if f.references %}
+          <ul>{% for r in f.references %}<li><a href="{{ r }}">{{ r }}</a></li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="note">
+    Static analysis cannot prove the absence of bugs. This report is a prioritised
+    starting point, not a guarantee of safety.
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,21 @@
+# Foundry configuration for the fixture contracts.
+#
+# NOT RUN HERE: `forge` could not be installed in this environment (the solc
+# binary host is blocked), so this file is provided for local use. The fixtures
+# themselves are exercised by the Python test suite, which compiles them with
+# the WASM solc -- that path is verified.
+[profile.default]
+src = "fixtures"
+out = "out"
+libs = ["lib"]
+test = "test"
+solc_version = "0.8.24"
+optimizer = true
+optimizer_runs = 200
+remappings = []
+
+[fuzz]
+runs = 256
+
+[invariant]
+runs = 64

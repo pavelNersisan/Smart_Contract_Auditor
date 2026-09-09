@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "arena/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # The WASM compiler is what makes the toolchain self-contained: no native
+      # solc download, which is the step that most often fails in CI.
+      - name: Install WASM Solidity compiler
+        run: npm install --silent --no-fund --no-audit solc@0.8.24
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install -e ./backend
+
+      - name: Report toolchain
+        run: auditor doctor
+
+      - name: Run tests
+        run: python -m pytest
+
+      # Guard against regressions in the clean-fixture baseline: if a detector
+      # starts firing spuriously, this fails even when unit tests pass.
+      - name: Clean fixtures must score 100
+        run: |
+          auditor audit fixtures/safe --fail-under 100 --no-external-tools
+          auditor audit fixtures/multifile --fail-under 100 --no-external-tools
+
+      - name: Vulnerable fixtures must fail the gate
+        run: |
+          if auditor audit fixtures/vulnerable/AccessControlFail.sol \
+               --fail-on critical --no-external-tools; then
+            echo "expected a critical finding in AccessControlFail.sol" >&2
+            exit 1
+          fi
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install and build
+        working-directory: frontend
+        run: |
+          npm install --silent --no-fund --no-audit
+          npm run build

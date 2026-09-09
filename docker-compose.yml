@@ -1,0 +1,36 @@
+# Full-stack workflow from the README's `map`.
+#
+# NOT VERIFIED: Docker was unavailable in the environment where this was built,
+# so these services have not been started end to end. The compose-free path
+# (venv + `auditor serve`) is the one covered by tests -- see README.
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      AUDITOR_HOST: 0.0.0.0
+      AUDITOR_PORT: "8000"
+      AUDITOR_API_KEYS: ${AUDITOR_API_KEYS:-}
+      AUDITOR_TOKEN_SECRET: ${AUDITOR_TOKEN_SECRET:-change-me-in-production}
+      AUDITOR_DATABASE_URL: sqlite:////srv/auditor/.data/audits.db
+      # Optional: set to enable Slither/Mythril if you add them to the image.
+      AUDITOR_ENABLE_SLITHER: "false"
+      AUDITOR_ENABLE_MYTHRIL: "false"
+    ports:
+      - "8000:8000"
+    volumes:
+      - auditor-data:/srv/auditor/.data
+    restart: unless-stopped
+
+  # Uncomment to serve the React app separately instead of letting the backend
+  # serve frontend/dist.
+  # frontend:
+  #   build: ./frontend
+  #   ports:
+  #     - "5173:80"
+  #   depends_on:
+  #     - backend
+
+volumes:
+  auditor-data:
