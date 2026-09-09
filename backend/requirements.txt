@@ -1,0 +1,17 @@
+# Runtime dependencies for the audit engine and API.
+#
+# The engine itself needs only the standard library plus jinja2/pydantic; the
+# web layer adds FastAPI/uvicorn. Slither and Mythril are deliberately NOT
+# listed here -- they require a native solc and pull heavy dependency trees.
+# Install them separately if you want their findings merged into reports:
+#   pip install slither-analyzer mythril
+
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.7
+jinja2>=3.1
+python-multipart>=0.0.9
+
+# Development / test
+pytest>=8.0
+httpx>=0.27

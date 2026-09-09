@@ -1,0 +1,9 @@
+{
+  "name": "smart-contract-auditor-solc",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Provides the WASM Solidity compiler used by the audit engine. `npm install` here is what makes the toolchain self-contained -- no native solc download required.",
+  "dependencies": {
+    "solc": "^0.8.24"
+  }
+}
